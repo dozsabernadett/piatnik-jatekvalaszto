@@ -55,8 +55,10 @@
 
 /* === Mobil fullscreen kvíz === */
 @media (max-width: 600px) {
-  /* Bevezető szöveg elrejtése mobilon, mert a kvíz saját start képernyője ugyanezt mutatja */
-  .pjv-wrap.pjv-top { display: none; }
+  .pjv-wrap { padding: 16px 16px 8px; }
+  .pjv-wrap h1 { font-size: 22px; }
+  .pjv-intro { font-size: 14px; }
+  .pjv-meta { margin-bottom: 12px; }
   .pjv-footer { padding: 16px 16px 24px; font-size: 13px; }
 }
 
@@ -76,13 +78,12 @@
     max-width: 100% !important;
     padding: 0;
   }
-  /* Kártya eltüntetés — széltől szélig */
+  /* Kártya — széltől szélig, de szolíd árnyékkal */
   .pjv-quiz-outer .card {
-    border-radius: 0;
-    box-shadow: none;
-    margin: 0;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    margin: 0 8px;
     padding: 24px 20px;
-    border: none;
   }
   /* Nagyobb, tapintásbarát gombok */
   .pjv-quiz-outer .btn {
@@ -388,7 +389,7 @@ function render() {
 function renderStart() {
   return `<div class="card">
     <span class="s-emoji">🎲</span>
-    <h1 class="s-title">Melyik társas a befutó?</h1>
+    <h1 class="s-title">Melyik társasjáték illik hozzád?</h1>
     <p class="s-desc">5 gyors kérdés, és megtaláljuk számodra a tökéletes játékot, legyen szó gyerekekkel töltött időről, családi játékról, vagy társasjáték estről a barátaiddal.</p>
     <button class="btn-go" onclick="startQuiz()">Kezdjük el! →</button>
     <p class="s-note">5 kérdés · ~1 perc</p>
@@ -416,6 +417,10 @@ function renderQuiz() {
 function renderResults() {
   const [pk,sk] = getResult(ans);
   const pg=G[pk], sg=G[sk];
+  // GA4 tracking
+  if (typeof gtag==='function') gtag('event','quiz_complete',{event_category:'jatekvalaszto',game_1:pg.name,game_2:sg.name});
+  // Meta Pixel tracking
+  if (typeof fbq==='function') fbq('trackCustom','QuizComplete',{game_1:pg.name,game_2:sg.name});
   return `<div class="card">
     <div class="r-tag">🎉 Megvan a tökéletes játék!</div>
     <h2 class="r-title">Ezeket ajánljuk neked:</h2>
@@ -440,14 +445,23 @@ function gc(g, primary) {
       <span class="chip">👥 ${g.p}</span>
       <span class="chip">⏱ ${g.t}</span>
     </div>
-    <a href="${g.url}" target="_blank" rel="noopener" class="gl ${primary?'pa':'sa'}">
+    <a href="${g.url}" target="_blank" rel="noopener" class="gl ${primary?'pa':'sa'}" onclick="trackClick('${g.name.replace(/'/g,"\\'")}')">
       Megnézem →
     </a>
   </div>`;
 }
 
+function trackClick(gameName) {
+  if (typeof gtag==='function') gtag('event','quiz_click',{event_category:'jatekvalaszto',game_name:gameName});
+  if (typeof fbq==='function') fbq('trackCustom','QuizClick',{game_name:gameName});
+}
+
 function startQuiz() {
   screen='quiz'; step=0; ans={}; seq=['q1','q2','q3','_','q5'];
+  // GA4 tracking
+  if (typeof gtag==='function') gtag('event','quiz_start',{event_category:'jatekvalaszto'});
+  // Meta Pixel tracking
+  if (typeof fbq==='function') fbq('trackCustom','QuizStart');
   render();
 }
 
